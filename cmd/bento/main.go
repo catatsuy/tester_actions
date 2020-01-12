@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"log"
 
 	"github.com/catatsuy/bento/mirait"
@@ -13,13 +12,12 @@ func main() {
 		log.Fatal(err)
 	}
 
-	ctx := context.Background()
-	err = sess.SetToken(ctx)
+	err = sess.SetToken()
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	output, err := sess.PostTranslate(ctx, "Hello")
+	output, err := sess.PostTranslate("Hello")
 	if err != nil {
 		log.Fatal(err)
 	}

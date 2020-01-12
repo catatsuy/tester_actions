@@ -1,13 +1,13 @@
 package mirait
 
 import (
-	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"net/http"
 	"net/http/cookiejar"
 	"net/url"
+	"strings"
 	"time"
 
 	"github.com/PuerkitoBio/goquery"
@@ -15,6 +15,8 @@ import (
 
 const (
 	DefaultAPITimeout = 10
+
+	userAgent = "waiwai client"
 )
 
 type Session struct {
@@ -41,11 +43,17 @@ func NewSession() (*Session, error) {
 	return session, nil
 }
 
-func (s *Session) SetToken(ctx context.Context) error {
+func (s *Session) SetToken() error {
 	u := s.URL
 	u.Path = "/trial/"
 
-	res, err := s.HTTPClient.Get(u.String())
+	req, err := http.NewRequest(http.MethodGet, u.String(), nil)
+	if err != nil {
+		return err
+	}
+	req.Header.Set("User-Agent", userAgent)
+
+	res, err := s.HTTPClient.Do(req)
 	if err != nil {
 		return err
 	}
@@ -75,7 +83,17 @@ func (s *Session) SetToken(ctx context.Context) error {
 	return nil
 }
 
-func (s *Session) PostTranslate(ctx context.Context, input string) (output string, err error) {
+type outputRes struct {
+	Output string `json:"output"`
+}
+
+// {"status":"success","outputs":[{"output":"こんにちは。"}]}
+type postTranslateRes struct {
+	Status  string      `json:"status"`
+	Outputs []outputRes `json:"outputs"`
+}
+
+func (s *Session) PostTranslate(input string) (output string, err error) {
 	u := s.URL
 	u.Path = "/trial/translate.php"
 
@@ -85,16 +103,33 @@ func (s *Session) PostTranslate(ctx context.Context, input string) (output strin
 	q.Set("source", "en")
 	q.Set("target", "ja")
 
-	res, err := s.HTTPClient.PostForm(u.String(), q)
+	req, err := http.NewRequest(http.MethodPost, u.String(), strings.NewReader(q.Encode()))
+	if err != nil {
+		return "", err
+	}
+
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	req.Header.Set("User-Agent", userAgent)
+
+	res, err := s.HTTPClient.Do(req)
 	if err != nil {
 		return "", err
 	}
 	defer res.Body.Close()
 
-	bb, err := ioutil.ReadAll(res.Body)
+	ptr := &postTranslateRes{}
+	err = json.NewDecoder(res.Body).Decode(ptr)
 	if err != nil {
-		return "", err
+		return "", fmt.Errorf("failed to encode json: %w", err)
 	}
 
-	return string(bb), nil
+	if len(ptr.Outputs) == 0 {
+		return "", fmt.Errorf("empty response")
+	}
+
+	if ptr.Status != "success" {
+		return "", fmt.Errorf("no success response: %s", ptr.Status)
+	}
+
+	return ptr.Outputs[0].Output, nil
 }
