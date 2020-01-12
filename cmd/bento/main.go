@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strings"
 	"unicode/utf8"
 
 	"github.com/catatsuy/bento/mirait"
@@ -24,7 +25,7 @@ func run(args []string) int {
 		return ExitCodeFail
 	}
 
-	input := args[1]
+	input := trimUnnecessary(args[1])
 
 	sess, err := mirait.NewSession()
 	if err != nil {
@@ -52,4 +53,19 @@ func isJP(input string) bool {
 	ratio := float64(utf8.RuneCountInString(input)) / float64(len(input))
 
 	return ratio < 0.5
+}
+
+func trimUnnecessary(input string) string {
+	strs := strings.Split(input, "\n")
+
+	newStrs := make([]string, 0, len(strs))
+	for _, s := range strs {
+		tmp := strings.TrimLeft(s, " /\t")
+		if tmp == "" {
+			tmp = "\n"
+		}
+		newStrs = append(newStrs, tmp)
+	}
+
+	return strings.Join(newStrs, " ")
 }
