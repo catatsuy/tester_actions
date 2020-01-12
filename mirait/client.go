@@ -93,15 +93,21 @@ type postTranslateRes struct {
 	Outputs []outputRes `json:"outputs"`
 }
 
-func (s *Session) PostTranslate(input string) (output string, err error) {
+func (s *Session) PostTranslate(input string, isJP bool) (output string, err error) {
 	u := s.URL
 	u.Path = "/trial/translate.php"
 
 	q := url.Values{}
 	q.Set("input", input)
 	q.Set("tran", s.Token)
-	q.Set("source", "en")
-	q.Set("target", "ja")
+
+	if isJP {
+		q.Set("source", "ja")
+		q.Set("target", "en")
+	} else {
+		q.Set("source", "en")
+		q.Set("target", "ja")
+	}
 
 	req, err := http.NewRequest(http.MethodPost, u.String(), strings.NewReader(q.Encode()))
 	if err != nil {

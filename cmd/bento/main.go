@@ -1,26 +1,55 @@
 package main
 
 import (
+	"fmt"
 	"log"
+	"os"
+	"unicode/utf8"
 
 	"github.com/catatsuy/bento/mirait"
 )
 
+const (
+	ExitCodeOK   = 0
+	ExitCodeFail = 1
+)
+
 func main() {
+	os.Exit(run(os.Args))
+}
+
+func run(args []string) int {
+	if len(args) <= 1 {
+		log.Println("must provide a input value")
+		return ExitCodeFail
+	}
+
+	input := args[1]
+
 	sess, err := mirait.NewSession()
 	if err != nil {
-		log.Fatal(err)
+		log.Print(err)
+		return ExitCodeFail
 	}
 
 	err = sess.SetToken()
 	if err != nil {
-		log.Fatal(err)
+		log.Print(err)
+		return ExitCodeFail
 	}
 
-	output, err := sess.PostTranslate("Hello")
+	output, err := sess.PostTranslate(input, isJP(input))
 	if err != nil {
-		log.Fatal(err)
+		log.Print(err)
+		return ExitCodeFail
 	}
 
-	log.Println(output)
+	fmt.Println(output)
+	return ExitCodeOK
+}
+
+func isJP(input string) bool {
+	ratio := float64(utf8.RuneCountInString(input)) / float64(len(input))
+
+	return ratio < 0.5
 }
