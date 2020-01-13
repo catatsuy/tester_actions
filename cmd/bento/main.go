@@ -124,11 +124,7 @@ func run(args []string) int {
 			}
 		}
 
-		for i, sinput := range inputs {
-			if i%5 == 4 {
-				sess.Refresh()
-				time.Sleep(time.Second)
-			}
+		for _, sinput := range inputs {
 			output, err := sess.PostTranslate(sinput, isJP)
 			if err != nil {
 				log.Print(err)

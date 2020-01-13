@@ -98,6 +98,9 @@ func (s *Session) SetToken(token string) {
 }
 
 func (s *Session) Refresh() error {
+	jar, _ := cookiejar.New(&cookiejar.Options{})
+	s.HTTPClient.Jar = jar
+
 	token, err := s.GetToken()
 	if err != nil {
 		return err
