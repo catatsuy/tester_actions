@@ -7,6 +7,7 @@ import (
 	"strings"
 	"unicode/utf8"
 
+	"github.com/catatsuy/bento/config"
 	"github.com/catatsuy/bento/mirait"
 )
 
@@ -27,17 +28,30 @@ func run(args []string) int {
 
 	input := trimUnnecessary(args[1])
 
+	conf, exist, err := config.LoadCache()
+	if err != nil {
+		log.Print(err)
+		return ExitCodeFail
+	}
+
 	sess, err := mirait.NewSession()
 	if err != nil {
 		log.Print(err)
 		return ExitCodeFail
 	}
 
-	err = sess.SetToken()
-	if err != nil {
-		log.Print(err)
-		return ExitCodeFail
+	token := ""
+	if !exist {
+		token, err = sess.GetToken()
+		if err != nil {
+			log.Print(err)
+			return ExitCodeFail
+		}
+	} else {
+		sess.SetCacheCookie(conf.Cookies)
+		token = conf.Token
 	}
+	sess.SetToken(token)
 
 	output, err := sess.PostTranslate(input, isJP(input))
 	if err != nil {
@@ -46,6 +60,17 @@ func run(args []string) int {
 	}
 
 	fmt.Println(output)
+
+	ccs := sess.DumpCookies()
+	err = config.DumpCache(config.Config{
+		Cookies: ccs,
+		Token:   token,
+	})
+	if err != nil {
+		log.Print(err)
+		return ExitCodeFail
+	}
+
 	return ExitCodeOK
 }
 

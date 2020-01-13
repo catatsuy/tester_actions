@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/PuerkitoBio/goquery"
+	"github.com/catatsuy/bento/config"
 )
 
 const (
@@ -43,29 +44,40 @@ func NewSession() (*Session, error) {
 	return session, nil
 }
 
-func (s *Session) SetToken() error {
+func (s *Session) SetCacheCookie(ccs []config.Cookie) {
+	cookies := make([]*http.Cookie, 0, len(ccs))
+	for _, cc := range ccs {
+		cookies = append(cookies, &http.Cookie{
+			Name:  cc.Name,
+			Value: cc.Value,
+		})
+	}
+	s.HTTPClient.Jar.SetCookies(s.URL, cookies)
+}
+
+func (s *Session) GetToken() (string, error) {
 	u := s.URL
 	u.Path = "/trial/"
 
 	req, err := http.NewRequest(http.MethodGet, u.String(), nil)
 	if err != nil {
-		return err
+		return "", err
 	}
 	req.Header.Set("User-Agent", userAgent)
 
 	res, err := s.HTTPClient.Do(req)
 	if err != nil {
-		return err
+		return "", err
 	}
 	defer res.Body.Close()
 
 	if res.StatusCode != http.StatusOK {
-		return fmt.Errorf("status code error: %d %s", res.StatusCode, res.Status)
+		return "", fmt.Errorf("status code error: %d %s", res.StatusCode, res.Status)
 	}
 
 	doc, err := goquery.NewDocumentFromReader(res.Body)
 	if err != nil {
-		return fmt.Errorf("failed to parse as HTML: %w", err)
+		return "", fmt.Errorf("failed to parse as HTML: %w", err)
 	}
 
 	token := ""
@@ -75,12 +87,14 @@ func (s *Session) SetToken() error {
 	})
 
 	if token == "" {
-		return errors.New("empty token")
+		return "", errors.New("empty token")
 	}
 
-	s.Token = token
+	return token, nil
+}
 
-	return nil
+func (s *Session) SetToken(token string) {
+	s.Token = token
 }
 
 type outputRes struct {
@@ -138,4 +152,19 @@ func (s *Session) PostTranslate(input string, isJP bool) (output string, err err
 	}
 
 	return ptr.Outputs[0].Output, nil
+}
+
+func (s *Session) DumpCookies() []config.Cookie {
+	cookies := s.HTTPClient.Jar.Cookies(s.URL)
+	ccs := make([]config.Cookie, 0, len(cookies))
+
+	for _, c := range cookies {
+		cc := config.Cookie{
+			Name:  c.Name,
+			Value: c.Value,
+		}
+		ccs = append(ccs, cc)
+	}
+
+	return ccs
 }
