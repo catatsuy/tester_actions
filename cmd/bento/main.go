@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"io/ioutil"
 	"log"
 	"os"
 	"strings"
@@ -30,8 +31,33 @@ func run(args []string) int {
 		return ExitCodeFail
 	}
 
+	input := args[1]
+
+	if input == "-refresh" {
+		err := config.RemoveCache()
+		if err != nil {
+			log.Print(err)
+			return ExitCodeFail
+		}
+		return ExitCodeOK
+	}
+
+	if input == "-file" {
+		if len(args) <= 2 {
+			log.Println("must provide a file name")
+			return ExitCodeFail
+		}
+		fileName := args[2]
+		bb, err := ioutil.ReadFile(fileName)
+		if err != nil {
+			log.Print(err)
+			return ExitCodeFail
+		}
+		input = string(bb)
+	}
+
 	r := strings.NewReplacer(". \n", ".\n\n", ".\n", ".\n\n")
-	input := trimUnnecessary(r.Replace(args[1]))
+	input = trimUnnecessary(r.Replace(input))
 
 	conf, exist, err := config.LoadCache()
 	if err != nil {

@@ -83,3 +83,15 @@ func DumpCache(conf Config) error {
 
 	return nil
 }
+
+func RemoveCache() error {
+	cacheFile, err := cacheFileName()
+	if err != nil {
+		return err
+	}
+	err = os.Remove(cacheFile)
+	if err != nil {
+		return err
+	}
+	return nil
+}
