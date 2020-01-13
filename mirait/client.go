@@ -97,6 +97,15 @@ func (s *Session) SetToken(token string) {
 	s.Token = token
 }
 
+func (s *Session) Refresh() error {
+	token, err := s.GetToken()
+	if err != nil {
+		return err
+	}
+	s.SetToken(token)
+	return nil
+}
+
 type outputRes struct {
 	Output string `json:"output"`
 }
@@ -136,6 +145,10 @@ func (s *Session) PostTranslate(input string, isJP bool) (output string, err err
 		return "", err
 	}
 	defer res.Body.Close()
+
+	if res.StatusCode != http.StatusOK {
+		return "", fmt.Errorf("status code error: %d %s", res.StatusCode, res.Status)
+	}
 
 	ptr := &postTranslateRes{}
 	err = json.NewDecoder(res.Body).Decode(ptr)
