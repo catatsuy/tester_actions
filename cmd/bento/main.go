@@ -21,6 +21,10 @@ const (
 	maxCharacters   = 2000
 )
 
+func init() {
+	log.SetFlags(log.Ldate | log.Ltime | log.Lshortfile)
+}
+
 func main() {
 	os.Exit(run(os.Args))
 }
