@@ -139,14 +139,16 @@ func run(args []string) int {
 		}
 	}
 
-	ccs := sess.DumpCookies()
-	err = config.DumpCache(config.Config{
-		Cookies: ccs,
-		Token:   token,
-	})
-	if err != nil {
-		log.Print(err)
-		return ExitCodeFail
+	if !exist {
+		ccs := sess.DumpCookies()
+		err = config.DumpCache(config.Config{
+			Cookies: ccs,
+			Token:   token,
+		})
+		if err != nil {
+			log.Print(err)
+			return ExitCodeFail
+		}
 	}
 
 	return ExitCodeOK
