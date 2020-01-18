@@ -141,7 +141,7 @@ func run(args []string) int {
 
 	if !exist {
 		ccs := sess.DumpCookies()
-		err = config.DumpCache(config.Config{
+		err = config.DumpCache(config.Cache{
 			Cookies: ccs,
 			Token:   token,
 		})

@@ -12,7 +12,7 @@ type Cookie struct {
 	Value string `json:"value"`
 }
 
-type Config struct {
+type Cache struct {
 	Cookies []Cookie `json:"cookies"`
 	Token   string   `json:"token"`
 }
@@ -27,39 +27,39 @@ func cacheFileName() (fileName string, err error) {
 	return fileName, nil
 }
 
-func LoadCache() (conf Config, exist bool, err error) {
+func LoadCache() (cache Cache, exist bool, err error) {
 	cacheFile, err := cacheFileName()
 	if err != nil {
-		return Config{}, false, err
+		return Cache{}, false, err
 	}
 
 	f, err := os.Open(cacheFile)
 	if err != nil {
 		if !os.IsNotExist(err) {
-			return Config{}, false, err
+			return Cache{}, false, err
 		}
-		return Config{}, false, nil
+		return Cache{}, false, nil
 	}
 	defer f.Close()
 	fi, err := os.Stat(cacheFile)
 	if err != nil {
-		return Config{}, false, err
+		return Cache{}, false, err
 	}
 	now := time.Now()
-	if !fi.ModTime().Add(30 * time.Minute).After(now) {
-		return Config{}, false, nil
+	if !fi.ModTime().Add(time.Hour).After(now) {
+		return Cache{}, false, nil
 	}
 
-	conf = Config{}
-	err = json.NewDecoder(f).Decode(&conf)
+	cache = Cache{}
+	err = json.NewDecoder(f).Decode(&cache)
 	if err != nil {
-		return Config{}, false, err
+		return Cache{}, false, err
 	}
 
-	return conf, true, nil
+	return cache, true, nil
 }
 
-func DumpCache(conf Config) error {
+func DumpCache(cache Cache) error {
 	cacheFile, err := cacheFileName()
 	if err != nil {
 		return err
@@ -76,7 +76,7 @@ func DumpCache(conf Config) error {
 	}
 	defer f.Close()
 
-	err = json.NewEncoder(f).Encode(conf)
+	err = json.NewEncoder(f).Encode(cache)
 	if err != nil {
 		return err
 	}
