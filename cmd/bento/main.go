@@ -60,8 +60,20 @@ func run(args []string) int {
 		input = string(bb)
 	}
 
+	words, err := config.LoadWords()
+	if err != nil {
+		log.Print(err)
+		return ExitCodeFail
+	}
+
 	r := strings.NewReplacer(". \n", ".\n\n", ".\n", ".\n\n")
 	input = trimUnnecessary(r.Replace(input))
+
+	oldnew, newold := config.Replacer(words)
+	replacerNoun := strings.NewReplacer(oldnew...)
+	revertNoun := strings.NewReplacer(newold...)
+
+	input = replacerNoun.Replace(input)
 
 	conf, exist, err := config.LoadCache()
 	if err != nil {
@@ -97,7 +109,7 @@ func run(args []string) int {
 			log.Print(err)
 			return ExitCodeFail
 		}
-		fmt.Println(output)
+		fmt.Println(revertNoun.Replace(output))
 	} else {
 		inputSplits := strings.Split(input, "\n")
 
@@ -134,7 +146,7 @@ func run(args []string) int {
 				log.Print(err)
 				return ExitCodeFail
 			}
-			fmt.Println(output)
+			fmt.Println(revertNoun.Replace(output))
 			time.Sleep(4 * time.Second)
 		}
 	}
