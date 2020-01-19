@@ -7,13 +7,57 @@ import (
 	"path/filepath"
 	"strings"
 	"time"
+
+	toml "github.com/pelletier/go-toml"
+)
+
+const (
+	defaultUserAgent = "waiwai client"
 )
 
 var (
 	random = mrand.New(mrand.NewSource(time.Now().UnixNano()))
 )
 
+type Config struct {
+	UserAgent string
+}
+
 func configFileName() (string, error) {
+	homedir, err := os.UserHomeDir()
+	if err != nil {
+		return "", err
+	}
+
+	return filepath.Join(homedir, ".bento", "config.toml"), nil
+}
+
+func LoadConfig() (Config, error) {
+	cfn, err := configFileName()
+	if err != nil {
+		return Config{}, err
+	}
+	f, err := os.Open(cfn)
+	if err != nil {
+		if !os.IsNotExist(err) {
+			return Config{}, err
+		}
+		return Config{}, nil
+	}
+	defer f.Close()
+
+	cfg := Config{}
+	tree, err := toml.LoadReader(f)
+	if err != nil {
+		return Config{}, err
+	}
+
+	cfg.UserAgent = tree.GetDefault("bento.user_agent", defaultUserAgent).(string)
+
+	return cfg, nil
+}
+
+func configWordsFileName() (string, error) {
 	homedir, err := os.UserHomeDir()
 	if err != nil {
 		return "", err
@@ -23,7 +67,7 @@ func configFileName() (string, error) {
 }
 
 func LoadWords() ([]string, error) {
-	cfn, err := configFileName()
+	cfn, err := configWordsFileName()
 	if err != nil {
 		return nil, err
 	}

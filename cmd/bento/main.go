@@ -60,6 +60,12 @@ func run(args []string) int {
 		input = string(bb)
 	}
 
+	cfg, err := config.LoadConfig()
+	if err != nil {
+		log.Print(err)
+		return ExitCodeFail
+	}
+
 	words, err := config.LoadWords()
 	if err != nil {
 		log.Print(err)
@@ -81,7 +87,7 @@ func run(args []string) int {
 		return ExitCodeFail
 	}
 
-	sess, err := mirait.NewSession()
+	sess, err := mirait.NewSession(cfg)
 	if err != nil {
 		log.Print(err)
 		return ExitCodeFail

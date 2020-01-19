@@ -16,18 +16,17 @@ import (
 
 const (
 	DefaultAPITimeout = 10
-
-	userAgent = "waiwai client"
 )
 
 type Session struct {
 	URL        *url.URL
 	HTTPClient *http.Client
+	Token      string
 
-	Token string
+	config config.Config
 }
 
-func NewSession() (*Session, error) {
+func NewSession(cfg config.Config) (*Session, error) {
 	jar, _ := cookiejar.New(&cookiejar.Options{})
 
 	session := &Session{
@@ -39,6 +38,7 @@ func NewSession() (*Session, error) {
 			Jar:     jar,
 			Timeout: time.Duration(DefaultAPITimeout) * time.Second,
 		},
+		config: cfg,
 	}
 
 	return session, nil
@@ -63,7 +63,7 @@ func (s *Session) GetToken() (string, error) {
 	if err != nil {
 		return "", err
 	}
-	req.Header.Set("User-Agent", userAgent)
+	req.Header.Set("User-Agent", s.config.UserAgent)
 
 	res, err := s.HTTPClient.Do(req)
 	if err != nil {
@@ -141,7 +141,7 @@ func (s *Session) PostTranslate(input string, isJP bool) (output string, err err
 	}
 
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
-	req.Header.Set("User-Agent", userAgent)
+	req.Header.Set("User-Agent", s.config.UserAgent)
 
 	res, err := s.HTTPClient.Do(req)
 	if err != nil {
