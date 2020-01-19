@@ -46,7 +46,7 @@ func LoadCache() (cache Cache, exist bool, err error) {
 		return Cache{}, false, err
 	}
 	now := time.Now()
-	if !fi.ModTime().Add(time.Hour).After(now) {
+	if !fi.ModTime().Add(30 * time.Minute).After(now) {
 		return Cache{}, false, nil
 	}
 
