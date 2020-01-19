@@ -1,6 +1,7 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"io/ioutil"
 	"log"
@@ -15,8 +16,9 @@ import (
 )
 
 const (
-	ExitCodeOK   = 0
-	ExitCodeFail = 1
+	ExitCodeOK             = 0
+	ExitCodeFail           = 1
+	ExitCodeParseFlagError = 1
 
 	splitCharacters = 1500
 	maxCharacters   = 2000
@@ -42,12 +44,29 @@ func run(args []string) int {
 
 	input := args[1]
 
-	if input == "-version" {
+	var (
+		version  bool
+		refresh  bool
+		filename string
+	)
+
+	flags := flag.NewFlagSet("bento", flag.ContinueOnError)
+	flags.SetOutput(os.Stderr)
+	flags.StringVar(&filename, "file", "", "translate a file")
+	flags.BoolVar(&version, "version", false, "print version information and quit")
+	flags.BoolVar(&refresh, "refresh", false, "refresh cache file")
+
+	err := flags.Parse(args[1:])
+	if err != nil {
+		log.Print(err)
+		return ExitCodeParseFlagError
+	}
+	if version {
 		fmt.Fprintf(os.Stderr, "bento version %s; %s\n", Version, runtime.Version())
 		return ExitCodeOK
 	}
 
-	if input == "-refresh" {
+	if refresh {
 		err := config.RemoveCache()
 		if err != nil {
 			log.Print(err)
@@ -56,13 +75,8 @@ func run(args []string) int {
 		return ExitCodeOK
 	}
 
-	if input == "-file" {
-		if len(args) <= 2 {
-			log.Println("must provide a file name")
-			return ExitCodeFail
-		}
-		fileName := args[2]
-		bb, err := ioutil.ReadFile(fileName)
+	if filename != "" {
+		bb, err := ioutil.ReadFile(filename)
 		if err != nil {
 			log.Print(err)
 			return ExitCodeFail
@@ -70,6 +84,10 @@ func run(args []string) int {
 		input = string(bb)
 	}
 
+	return translate(input)
+}
+
+func translate(input string) int {
 	cfg, err := config.LoadConfig()
 	if err != nil {
 		log.Print(err)
