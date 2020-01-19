@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"log"
 	"os"
+	"runtime"
 	"strings"
 	"time"
 	"unicode/utf8"
@@ -19,6 +20,10 @@ const (
 
 	splitCharacters = 1500
 	maxCharacters   = 2000
+)
+
+var (
+	Version string
 )
 
 func init() {
@@ -36,6 +41,11 @@ func run(args []string) int {
 	}
 
 	input := args[1]
+
+	if input == "-version" {
+		fmt.Fprintf(os.Stderr, "bento version %s; %s\n", Version, runtime.Version())
+		return ExitCodeOK
+	}
 
 	if input == "-refresh" {
 		err := config.RemoveCache()

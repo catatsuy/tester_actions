@@ -4,7 +4,7 @@ all: bin/bento
 
 bin/bento: cmd/bento/main.go mirait/*.go config/*.go
 	go mod tidy
-	go build -o bin/bento cmd/bento/main.go
+	go build -ldflags "-X main.Version=`git rev-list HEAD -n1`" -o bin/bento cmd/bento/main.go
 
 vet:
 	go vet ./...
