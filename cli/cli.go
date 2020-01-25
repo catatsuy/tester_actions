@@ -47,12 +47,12 @@ func (c *CLI) Run(args []string) int {
 		return ExitCodeFail
 	}
 
-	input := args[1]
-
 	var (
 		version  bool
 		refresh  bool
 		filename string
+		from     string
+		to       string
 	)
 
 	flags := flag.NewFlagSet("bento", flag.ContinueOnError)
@@ -60,6 +60,8 @@ func (c *CLI) Run(args []string) int {
 	flags.StringVar(&filename, "file", "", "translate a file")
 	flags.BoolVar(&version, "version", false, "print version information and quit")
 	flags.BoolVar(&refresh, "refresh", false, "refresh cache file")
+	flags.StringVar(&from, "from", "", "from language")
+	flags.StringVar(&to, "to", "", "to language")
 
 	err := flags.Parse(args[1:])
 	if err != nil {
@@ -80,6 +82,40 @@ func (c *CLI) Run(args []string) int {
 		return ExitCodeOK
 	}
 
+	input := ""
+
+	argv := flags.Args()
+	if len(argv) == 1 {
+		input = argv[0]
+	} else if len(argv) > 1 {
+		input = argv[0]
+		err := flags.Parse(argv[1:])
+		if err != nil {
+			return ExitCodeParseFlagError
+		}
+	}
+
+	switch from {
+	case "ja":
+	case "en":
+	default:
+		log.Printf("from should be ja or en. but %s\n", from)
+		return ExitCodeFail
+	}
+
+	switch to {
+	case "ja":
+	case "en":
+	default:
+		log.Printf("to should be ja or en. but %s\n", to)
+		return ExitCodeFail
+	}
+
+	if from != "" && to != "" {
+		log.Println("from and to must not be specified at the same time")
+		return ExitCodeFail
+	}
+
 	if filename != "" {
 		bb, err := ioutil.ReadFile(filename)
 		if err != nil {
@@ -89,10 +125,17 @@ func (c *CLI) Run(args []string) int {
 		input = string(bb)
 	}
 
-	return c.translate(input)
+	isJP := false
+	if from == "" && to == "" {
+		isJP = autoDetectJP(input)
+	} else if from == "ja" || to == "en" {
+		isJP = true
+	}
+
+	return c.translate(input, isJP)
 }
 
-func (c *CLI) translate(input string) int {
+func (c *CLI) translate(input string, isJP bool) int {
 	cfg, err := config.LoadConfig()
 	if err != nil {
 		log.Print(err)
@@ -138,8 +181,6 @@ func (c *CLI) translate(input string) int {
 		token = conf.Token
 	}
 	sess.SetToken(token)
-
-	isJP := isJP(input)
 
 	characters := utf8.RuneCountInString(input)
 	if characters < maxCharacters {
@@ -205,7 +246,7 @@ func (c *CLI) translate(input string) int {
 	return ExitCodeOK
 }
 
-func isJP(input string) bool {
+func autoDetectJP(input string) bool {
 	ratio := float64(utf8.RuneCountInString(input)) / float64(len(input))
 
 	return ratio < 0.5
