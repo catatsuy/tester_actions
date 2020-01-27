@@ -95,27 +95,6 @@ func (c *CLI) Run(args []string) int {
 		}
 	}
 
-	switch from {
-	case "ja":
-	case "en":
-	default:
-		log.Printf("from should be ja or en. but %s\n", from)
-		return ExitCodeFail
-	}
-
-	switch to {
-	case "ja":
-	case "en":
-	default:
-		log.Printf("to should be ja or en. but %s\n", to)
-		return ExitCodeFail
-	}
-
-	if from != "" && to != "" {
-		log.Println("from and to must not be specified at the same time")
-		return ExitCodeFail
-	}
-
 	if filename != "" {
 		bb, err := ioutil.ReadFile(filename)
 		if err != nil {
