@@ -12,3 +12,5 @@
 *.out
 
 bin
+bento
+release.tar.gz

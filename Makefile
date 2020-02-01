@@ -21,4 +21,8 @@ clean:
 check:
 	go test ./...
 
+release:
+	go build -ldflags "-X github.com/catatsuy/bento/cli.Version=${version}" -o bento cmd/bento/main.go
+	tar cvzf release.tar.gz bento
+
 .PHONY: all vet errcheck staticcheck clean check
