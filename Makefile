@@ -18,4 +18,7 @@ staticcheck:
 clean:
 	rm -rf bin/*
 
-.PHONY: all vet errcheck staticcheck clean
+check:
+	go test ./...
+
+.PHONY: all vet errcheck staticcheck clean check
