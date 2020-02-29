@@ -21,11 +21,4 @@ clean:
 check:
 	go test ./...
 
-artifacts:
-	mkdir artifacts
-	GOOS=linux go build -ldflags "-X github.com/catatsuy/bento/cli.Version=${version}" -o bento cmd/bento/main.go
-	tar cvzf artifacts/bento-linux-amd64.tar.gz bento
-	GOOS=darwin go build -ldflags "-X github.com/catatsuy/bento/cli.Version=${version}" -o bento cmd/bento/main.go
-	tar cvzf artifacts/bento-darwin-amd64.tar.gz bento
-
-.PHONY: all vet errcheck staticcheck clean check artifacts
+.PHONY: all vet errcheck staticcheck clean check
