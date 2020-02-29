@@ -1,0 +1,20 @@
+project_name: bento
+env:
+  - GO111MODULE=on
+before:
+  hooks:
+    - go mod tidy
+builds:
+  - main: ./cmd/bento/main.go
+    binary: bento
+    ldflags:
+      - -s -w
+      - -X github.com/catatsuy/bento/cli.Version={{.Version}}
+    env:
+      - CGO_ENABLED=0
+    goarch:
+      - amd64
+archives:
+  - name_template: '{{ .ProjectName }}-{{ .Os }}-{{ .Arch }}'
+release:
+  prerelease: auto
