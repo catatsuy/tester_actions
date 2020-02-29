@@ -226,9 +226,9 @@ func (c *CLI) translate(input string, isJP bool) int {
 }
 
 func autoDetectJP(input string) bool {
-	ratio := float64(utf8.RuneCountInString(input)) / float64(len(input))
+	ratio := float64(len(input)) / float64(utf8.RuneCountInString(input))
 
-	return ratio < 0.5
+	return ratio < 1.5
 }
 
 func trimUnnecessary(input string) string {
