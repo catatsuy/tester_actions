@@ -236,7 +236,7 @@ func trimUnnecessary(input string) string {
 
 	newStrs := make([]string, 0, len(strs))
 	for _, s := range strs {
-		tmp := strings.TrimLeft(s, " /\t")
+		tmp := strings.TrimLeft(s, " #/\t")
 		if tmp == "" {
 			tmp = "\n"
 		}
