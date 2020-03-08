@@ -1,5 +1,3 @@
-export GO111MODULE=on
-
 all: bin/bento
 
 bin/bento: cmd/bento/main.go mirait/*.go config/*.go cli/*.go
