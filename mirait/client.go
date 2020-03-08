@@ -18,6 +18,10 @@ const (
 	DefaultAPITimeout = 10
 )
 
+var (
+	targetURL = "https://miraitranslate.com"
+)
+
 type Session struct {
 	URL        *url.URL
 	HTTPClient *http.Client
@@ -27,12 +31,17 @@ type Session struct {
 }
 
 func NewSession(cfg config.Config) (*Session, error) {
+	parsedURL, err := url.ParseRequestURI(targetURL)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse url: %s: %w", targetURL, err)
+	}
+
 	jar, _ := cookiejar.New(&cookiejar.Options{})
 
 	session := &Session{
 		URL: &url.URL{
-			Scheme: "https",
-			Host:   "miraitranslate.com",
+			Scheme: parsedURL.Scheme,
+			Host:   parsedURL.Host,
 		},
 		HTTPClient: &http.Client{
 			Jar:     jar,
