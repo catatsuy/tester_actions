@@ -123,7 +123,7 @@ type outputRes struct {
 }
 
 // {"status":"success","outputs":[{"output":"こんにちは。"}]}
-type postTranslateRes struct {
+type PostTranslateRes struct {
 	Status  string      `json:"status"`
 	Outputs []outputRes `json:"outputs"`
 }
@@ -162,7 +162,7 @@ func (s *Session) PostTranslate(input string, isJP bool) (output string, err err
 		return "", fmt.Errorf("status code error: %d %s", res.StatusCode, res.Status)
 	}
 
-	ptr := &postTranslateRes{}
+	ptr := &PostTranslateRes{}
 	err = json.NewDecoder(res.Body).Decode(ptr)
 	if err != nil {
 		return "", fmt.Errorf("failed to encode json: %w", err)
