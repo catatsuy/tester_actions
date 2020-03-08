@@ -1,6 +1,7 @@
 package mirait_test
 
 import (
+	"io/ioutil"
 	"net/http"
 	"net/http/httptest"
 	"net/url"
@@ -65,5 +66,95 @@ func TestGetToken_Success(t *testing.T) {
 	expectedToken := "tokentokentoken"
 	if token != expectedToken {
 		t.Errorf("got %q, want %q", token, expectedToken)
+	}
+}
+
+func TestPostTranslate_Success(t *testing.T) {
+	muxAPI := http.NewServeMux()
+	testAPIServer := httptest.NewServer(muxAPI)
+	defer testAPIServer.Close()
+
+	expectedToken := "tokentokentoken"
+	expectedInput := "test"
+	expectedIsJP := false
+
+	muxAPI.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		contentType := r.Header.Get("Content-Type")
+		expectedType := "application/x-www-form-urlencoded"
+		if contentType != expectedType {
+			t.Errorf("Content-Type expected %s, but %s", expectedType, contentType)
+		}
+
+		ck := r.Header.Get("Cookie")
+		expectedCookie := "test=test_value"
+		if ck != expectedCookie {
+			t.Errorf("Cookie: got %s, want %s", ck, expectedCookie)
+		}
+
+		bodyBytes, err := ioutil.ReadAll(r.Body)
+		if err != nil {
+			t.Fatal(err)
+		}
+		defer r.Body.Close()
+
+		actualV, err := url.ParseQuery(string(bodyBytes))
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		expectedV := url.Values{}
+		expectedV.Set("input", expectedInput)
+		expectedV.Set("tran", expectedToken)
+
+		if expectedIsJP {
+			expectedV.Set("source", "ja")
+			expectedV.Set("target", "en")
+		} else {
+			expectedV.Set("source", "en")
+			expectedV.Set("target", "ja")
+		}
+
+		if !reflect.DeepEqual(actualV, expectedV) {
+			t.Errorf("expected %q to equal %q", actualV, expectedV)
+		}
+
+		http.ServeFile(w, r, "testdata/post_translate_ok.json")
+	})
+
+	defer mirait.SetTargetURL(testAPIServer.URL)()
+
+	s, err := mirait.NewSession(config.Config{})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	s.SetCacheCookie([]config.Cookie{
+		config.Cookie{
+			Name:  "test",
+			Value: "test_value",
+		},
+	})
+	s.SetToken(expectedToken)
+
+	expectedIsJP = false
+	output, err := s.PostTranslate(expectedInput, expectedIsJP)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	expectedOutput := "こんにちは。"
+	if output != expectedOutput {
+		t.Errorf("got %s, want %s", output, expectedOutput)
+	}
+
+	expectedIsJP = true
+	output, err = s.PostTranslate(expectedInput, expectedIsJP)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	expectedOutput = "こんにちは。"
+	if output != expectedOutput {
+		t.Errorf("got %s, want %s", output, expectedOutput)
 	}
 }
