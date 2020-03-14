@@ -1,4 +1,4 @@
-package cli
+package util
 
 import (
 	"testing"
@@ -21,7 +21,7 @@ I like Go.`, "I am a Gopher. \n I like Go."},
 
 	for _, tt := range trimtests {
 		t.Run(tt.in, func(t *testing.T) {
-			s := trimUnnecessary(tt.in)
+			s := TrimUnnecessary(tt.in)
 			if s != tt.out {
 				t.Errorf("got %q, want %q", s, tt.out)
 			}
@@ -41,7 +41,7 @@ func TestAutoDetectJP(t *testing.T) {
 
 	for _, tt := range trimtests {
 		t.Run(tt.in, func(t *testing.T) {
-			bl := autoDetectJP(tt.in)
+			bl := AutoDetectJP(tt.in)
 			if bl != tt.out {
 				t.Errorf("got %t, want %t", bl, tt.out)
 			}
