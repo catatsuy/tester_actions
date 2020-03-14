@@ -13,6 +13,7 @@ import (
 
 	"github.com/catatsuy/bento/config"
 	"github.com/catatsuy/bento/mirait"
+	"github.com/catatsuy/bento/util"
 )
 
 func init() {
@@ -106,7 +107,7 @@ func (c *CLI) Run(args []string) int {
 
 	isJP := false
 	if from == "" && to == "" {
-		isJP = autoDetectJP(input)
+		isJP = util.AutoDetectJP(input)
 	} else if from == "ja" || to == "en" {
 		isJP = true
 	}
@@ -128,7 +129,7 @@ func (c *CLI) translate(input string, isJP bool) int {
 	}
 
 	r := strings.NewReplacer(". \n", ".\n\n", ".\n", ".\n\n")
-	input = trimUnnecessary(r.Replace(input))
+	input = util.TrimUnnecessary(r.Replace(input))
 
 	oldnew, newold := config.Replacer(words)
 	replacerNoun := strings.NewReplacer(oldnew...)
@@ -223,25 +224,4 @@ func (c *CLI) translate(input string, isJP bool) int {
 	}
 
 	return ExitCodeOK
-}
-
-func autoDetectJP(input string) bool {
-	ratio := float64(len(input)) / float64(utf8.RuneCountInString(input))
-
-	return ratio > 1.5
-}
-
-func trimUnnecessary(input string) string {
-	strs := strings.Split(input, "\n")
-
-	newStrs := make([]string, 0, len(strs))
-	for _, s := range strs {
-		tmp := strings.TrimLeft(s, " #/\t")
-		if tmp == "" {
-			tmp = "\n"
-		}
-		newStrs = append(newStrs, tmp)
-	}
-
-	return strings.Join(newStrs, " ")
 }
