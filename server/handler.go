@@ -2,23 +2,12 @@ package server
 
 import (
 	"encoding/json"
-	"html/template"
 	"net/http"
 	"strings"
 
 	"github.com/catatsuy/bento/config"
 	"github.com/catatsuy/bento/util"
 )
-
-var (
-	templates *template.Template
-)
-
-func init() {
-	templates = template.Must(template.ParseFiles(
-		"./public/translate.html",
-	))
-}
 
 type reqTranslate struct {
 	Input string `json:"input"`
@@ -96,8 +85,4 @@ func (s *Server) postTranslate(w http.ResponseWriter, r *http.Request) {
 
 	w.Header().Set("Content-Type", "application/json;charset=utf-8")
 	json.NewEncoder(w).Encode(res)
-}
-
-func (s *Server) getTranslate(w http.ResponseWriter, r *http.Request) {
-	templates.ExecuteTemplate(w, "translate.html", struct{}{})
 }

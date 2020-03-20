@@ -59,7 +59,7 @@ func New(appVersion string) *Server {
 	s.mux.HandleFunc("/debug/pprof/trace", pprof.Trace)
 
 	s.mux.Handle(("/js/"), http.FileServer(http.Dir("./public/")))
-	s.mux.HandleFunc("/translate.html", s.getTranslate)
+	s.mux.Handle("/translate.html", http.FileServer(http.Dir("./public/")))
 
 	return s
 }
