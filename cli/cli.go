@@ -51,6 +51,7 @@ func (c *CLI) Run(args []string) int {
 	var (
 		version  bool
 		refresh  bool
+		trim     bool
 		filename string
 		from     string
 		to       string
@@ -59,6 +60,7 @@ func (c *CLI) Run(args []string) int {
 	flags := flag.NewFlagSet("bento", flag.ContinueOnError)
 	flags.SetOutput(c.errStream)
 	flags.StringVar(&filename, "file", "", "translate a file")
+	flags.BoolVar(&trim, "trim", false, "print text which remove the unnecessary characters")
 	flags.BoolVar(&version, "version", false, "print version information and quit")
 	flags.BoolVar(&refresh, "refresh", false, "refresh cache file")
 	flags.StringVar(&from, "from", "", "from language")
@@ -105,6 +107,10 @@ func (c *CLI) Run(args []string) int {
 		input = string(bb)
 	}
 
+	if trim {
+		return c.trim(input)
+	}
+
 	isJP := false
 	if from == "" && to == "" {
 		isJP = util.AutoDetectJP(input)
@@ -113,6 +119,26 @@ func (c *CLI) Run(args []string) int {
 	}
 
 	return c.translate(input, isJP)
+}
+
+func (c *CLI) trim(input string) int {
+	words, err := config.LoadWords()
+	if err != nil {
+		log.Print(err)
+		return ExitCodeFail
+	}
+
+	r := strings.NewReplacer(". \n", ".\n\n", ".\n", ".\n\n")
+	input = util.TrimUnnecessary(r.Replace(input))
+
+	oldnew, _ := config.Replacer(words)
+	replacerNoun := strings.NewReplacer(oldnew...)
+
+	output := replacerNoun.Replace(input)
+
+	fmt.Fprintln(c.outStream, output)
+
+	return ExitCodeOK
 }
 
 func (c *CLI) translate(input string, isJP bool) int {
