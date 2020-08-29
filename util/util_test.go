@@ -17,6 +17,8 @@ func TestTrimUnnecessary(t *testing.T) {
 am a Gopher.
 
 I like Go.`, "I am a Gopher. \n I like Go."},
+		{`  * aaaa
+		  * bbbb`, "aaaa bbbb"},
 	}
 
 	for _, tt := range trimtests {
