@@ -41,8 +41,8 @@ func TestGetToken_Success(t *testing.T) {
 			t.Fatalf("User-Agent: got %s, want %s", userAgent, expectedUserAgent)
 		}
 
-		if r.URL.Path != "/trial/" {
-			t.Fatalf("got %s, want \"/trial/\"", r.URL.Path)
+		if r.URL.Path != "/trial" {
+			t.Fatalf("got %s, want \"/trial\"", r.URL.Path)
 		}
 
 		http.ServeFile(w, r, "testdata/get_token_ok.html")

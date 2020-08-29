@@ -4,13 +4,14 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"net/http/cookiejar"
 	"net/url"
+	"regexp"
 	"strings"
 	"time"
 
-	"github.com/PuerkitoBio/goquery"
 	"github.com/catatsuy/bento/config"
 )
 
@@ -66,7 +67,7 @@ func (s *Session) SetCacheCookie(ccs []config.Cookie) {
 
 func (s *Session) GetToken() (string, error) {
 	u := s.URL
-	u.Path = "/trial/"
+	u.Path = "/trial"
 
 	req, err := http.NewRequest(http.MethodGet, u.String(), nil)
 	if err != nil {
@@ -84,22 +85,18 @@ func (s *Session) GetToken() (string, error) {
 		return "", fmt.Errorf("status code error: %d %s", res.StatusCode, res.Status)
 	}
 
-	doc, err := goquery.NewDocumentFromReader(res.Body)
+	bb, err := ioutil.ReadAll(res.Body)
 	if err != nil {
-		return "", fmt.Errorf("failed to parse as HTML: %w", err)
+		return "", err
 	}
+	re := regexp.MustCompile(`var tran = "([a-zA-Z0-9]*)"`)
+	tokenByte := re.FindAllSubmatch(bb, 1)
 
-	token := ""
-	doc.Find("input#tranInput").EachWithBreak(func(_ int, s *goquery.Selection) bool {
-		token, _ = s.Attr("value")
-		return false
-	})
-
-	if token == "" {
+	if len(tokenByte) == 0 {
 		return "", errors.New("empty token")
 	}
 
-	return token, nil
+	return string(tokenByte[0][1]), nil
 }
 
 func (s *Session) SetToken(token string) {
