@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 	"log"
 	"runtime"
+	"runtime/debug"
 	"strings"
 	"time"
 	"unicode/utf8"
@@ -29,17 +30,22 @@ const (
 	maxCharacters   = 2000
 )
 
-var (
-	Version string
-)
-
 type CLI struct {
+	appVersion           string
 	outStream, errStream io.Writer
 }
 
 func NewCLI(outStream, errStream io.Writer) *CLI {
 	log.SetOutput(errStream)
-	return &CLI{outStream: outStream, errStream: errStream}
+	return &CLI{appVersion: version(), outStream: outStream, errStream: errStream}
+}
+
+func version() string {
+	info, ok := debug.ReadBuildInfo()
+	if !ok {
+		return "(devel)"
+	}
+	return info.Main.Version
 }
 
 func (c *CLI) Run(args []string) int {
@@ -72,7 +78,7 @@ func (c *CLI) Run(args []string) int {
 		return ExitCodeParseFlagError
 	}
 	if version {
-		fmt.Fprintf(c.errStream, "bento version %s; %s\n", Version, runtime.Version())
+		fmt.Fprintf(c.errStream, "bento version %s; %s\n", c.appVersion, runtime.Version())
 		return ExitCodeOK
 	}
 
