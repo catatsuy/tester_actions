@@ -9,7 +9,7 @@ builds:
     binary: bento
     ldflags:
       - -s -w
-      - -X github.com/catatsuy/bento/cli.Version={{.Version}}
+      - -X github.com/catatsuy/bento/cli.Version=v{{.Version}}
     env:
       - CGO_ENABLED=0
     goarch:
