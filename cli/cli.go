@@ -30,6 +30,10 @@ const (
 	maxCharacters   = 2000
 )
 
+var (
+	Version string
+)
+
 type CLI struct {
 	appVersion           string
 	outStream, errStream io.Writer
@@ -41,6 +45,10 @@ func NewCLI(outStream, errStream io.Writer) *CLI {
 }
 
 func version() string {
+	if Version != "" {
+		return Version
+	}
+
 	info, ok := debug.ReadBuildInfo()
 	if !ok {
 		return "(devel)"
