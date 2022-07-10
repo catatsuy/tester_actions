@@ -19,5 +19,3 @@ archives:
   - name_template: '{{ .ProjectName }}-{{ .Os }}-{{ .Arch }}'
 release:
   prerelease: auto
-changelog:
-  sort: asc
