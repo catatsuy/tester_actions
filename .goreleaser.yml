@@ -20,4 +20,4 @@ archives:
 release:
   prerelease: auto
 changelog:
-  use: github-native
+  use: github
