@@ -19,3 +19,5 @@ archives:
   - name_template: '{{ .ProjectName }}-{{ .Os }}-{{ .Arch }}'
 release:
   prerelease: auto
+changelog:
+  use: github-native
