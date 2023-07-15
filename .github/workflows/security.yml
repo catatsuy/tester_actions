@@ -1,3 +1,5 @@
+name: govulncheck
+
 on:
   push:
   schedule:
