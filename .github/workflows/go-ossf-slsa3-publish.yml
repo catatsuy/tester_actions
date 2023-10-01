@@ -31,6 +31,7 @@ jobs:
       actions: read   # To read workflow path.
     uses: slsa-framework/slsa-github-generator/.github/workflows/builder_go_slsa3.yml@v1.4.0
     with:
+      path: cmd/bento/main.go
       go-version: 1.21
       # =============================================================================================================
       #     Optional: For more options, see https://github.com/slsa-framework/slsa-github-generator#golang-projects
