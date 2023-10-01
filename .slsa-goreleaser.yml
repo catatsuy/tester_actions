@@ -29,5 +29,5 @@ binary: binary-{{ .Os }}-{{ .Arch }}
 
 # (Optional) ldflags generated dynamically in the workflow, and set as the `evaluated-envs` input variables in the workflow.
 ldflags:
-  - "-X github.com/catatsuy/tester_actions/cli.Version={{ .Env.VERSION }}"
+  - "-X github.com/catatsuy/tester_actions/cli.Version=v0.0.100"
 
