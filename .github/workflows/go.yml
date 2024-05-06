@@ -1,23 +1,32 @@
 name: Go
 on: [push]
 jobs:
-
-  build:
+  setup:
     name: Build
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        go: [ '1.18.x' ]
+        go: ["1.18.x"]
     steps:
+      - name: Set up Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: ${{ matrix.go }}
+        id: go
 
-    - name: Set up Go
-      uses: actions/setup-go@v4
-      with:
-        go-version: ${{ matrix.go }}
-      id: go
+      - name: Check out code into the Go module directory
+        uses: actions/checkout@v4
 
-    - name: Check out code into the Go module directory
-      uses: actions/checkout@v4
+  job1:
+    needs: setup
+    runs-on: ubuntu-latest
+    steps:
+      - name: make check
+        run: make check
 
-    - name: check
-      run: make check
+  job2:
+    needs: setup
+    runs-on: ubuntu-latest
+    steps:
+      - name: make vet
+        run: make vet
