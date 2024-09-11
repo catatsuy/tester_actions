@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	toml "github.com/pelletier/go-toml"
+	toml "github.com/pelletier/go-toml/v2"
 )
 
 const (
