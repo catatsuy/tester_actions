@@ -1,20 +1,16 @@
 package cli
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"log"
+	"os"
 	"runtime"
 	"runtime/debug"
-	"strings"
-	"time"
-	"unicode/utf8"
 
-	"github.com/catatsuy/bento/config"
-	"github.com/catatsuy/bento/mirait"
-	"github.com/catatsuy/bento/util"
+	"github.com/catatsuy/bento/openai"
 )
 
 func init() {
@@ -64,19 +60,13 @@ func (c *CLI) Run(args []string) int {
 
 	var (
 		version  bool
-		refresh  bool
 		filename string
-		from     string
-		to       string
 	)
 
 	flags := flag.NewFlagSet("bento", flag.ContinueOnError)
 	flags.SetOutput(c.errStream)
 	flags.StringVar(&filename, "file", "", "translate a file")
 	flags.BoolVar(&version, "version", false, "print version information and quit")
-	flags.BoolVar(&refresh, "refresh", false, "refresh cache file")
-	flags.StringVar(&from, "from", "", "from language")
-	flags.StringVar(&to, "to", "", "to language")
 
 	err := flags.Parse(args[1:])
 	if err != nil {
@@ -85,15 +75,6 @@ func (c *CLI) Run(args []string) int {
 	}
 	if version {
 		fmt.Fprintf(c.errStream, "bento version %s; %s\n", c.appVersion, runtime.Version())
-		return ExitCodeOK
-	}
-
-	if refresh {
-		err := config.RemoveCache()
-		if err != nil {
-			log.Print(err)
-			return ExitCodeFail
-		}
 		return ExitCodeOK
 	}
 
@@ -111,7 +92,7 @@ func (c *CLI) Run(args []string) int {
 	}
 
 	if filename != "" {
-		bb, err := ioutil.ReadFile(filename)
+		bb, err := os.ReadFile(filename)
 		if err != nil {
 			log.Print(err)
 			return ExitCodeFail
@@ -119,136 +100,28 @@ func (c *CLI) Run(args []string) int {
 		input = string(bb)
 	}
 
-	return c.trim(input)
-}
-
-func (c *CLI) trim(input string) int {
-	words, err := config.LoadWords()
+	client, err := openai.NewClient(openai.OpenAIAPIURL)
 	if err != nil {
 		log.Print(err)
 		return ExitCodeFail
 	}
 
-	r := strings.NewReplacer(". \n", ".\n\n", ".\n", ".\n\n")
-	input = util.TrimUnnecessary(r.Replace(input))
+	payload := &openai.Payload{
+		Model: "gpt-3.5-turbo",
+		Messages: []openai.Message{
+			{
+				Role:    "user",
+				Content: "英語を日本語に翻訳してください。返事は翻訳された文章のみにしてください。" + input,
+			},
+		},
+	}
 
-	oldnew, _ := config.Replacer(words)
-	replacerNoun := strings.NewReplacer(oldnew...)
-
-	output := replacerNoun.Replace(input)
-
-	fmt.Fprintln(c.outStream, output)
-
-	return ExitCodeOK
-}
-
-func (c *CLI) translate(input string, isJP bool) int {
-	cfg, err := config.LoadConfig()
+	res, err := client.Chat(context.Background(), payload)
 	if err != nil {
 		log.Print(err)
 		return ExitCodeFail
 	}
 
-	words, err := config.LoadWords()
-	if err != nil {
-		log.Print(err)
-		return ExitCodeFail
-	}
-
-	r := strings.NewReplacer(". \n", ".\n\n", ".\n", ".\n\n")
-	input = util.TrimUnnecessary(r.Replace(input))
-
-	oldnew, newold := config.Replacer(words)
-	replacerNoun := strings.NewReplacer(oldnew...)
-	revertNoun := strings.NewReplacer(newold...)
-
-	input = replacerNoun.Replace(input)
-
-	conf, exist, err := config.LoadCache()
-	if err != nil {
-		log.Print(err)
-		return ExitCodeFail
-	}
-
-	sess, err := mirait.NewSession(cfg)
-	if err != nil {
-		log.Print(err)
-		return ExitCodeFail
-	}
-
-	token := ""
-	if !exist {
-		token, err = sess.GetToken()
-		if err != nil {
-			log.Print(err)
-			return ExitCodeFail
-		}
-	} else {
-		sess.SetCacheCookie(conf.Cookies)
-		token = conf.Token
-	}
-	sess.SetToken(token)
-
-	characters := utf8.RuneCountInString(input)
-	if characters < maxCharacters {
-		output, err := sess.PostTranslate(input, isJP)
-		if err != nil {
-			log.Print(err)
-			return ExitCodeFail
-		}
-		fmt.Fprintln(c.outStream, revertNoun.Replace(output))
-	} else {
-		inputSplits := strings.Split(input, "\n")
-
-		chs := make([]int, len(inputSplits))
-		for i, in := range inputSplits {
-			chs[i] = utf8.RuneCountInString(in)
-		}
-
-		inputs := make([]string, 0, len(chs))
-		index := 0
-		count := 0
-		for i := range chs {
-			count += chs[i]
-			if count < splitCharacters {
-				continue
-			}
-			if count < maxCharacters {
-				inputs = append(inputs, strings.Join(inputSplits[index:i+1], "\n"))
-				index = i + 1
-				count = 0
-			} else if i > index {
-				inputs = append(inputs, strings.Join(inputSplits[index:i], "\n"))
-				index = i
-				count = chs[i]
-			} else {
-				fmt.Fprintln(c.errStream, "you must split input")
-				return ExitCodeFail
-			}
-		}
-
-		for _, sinput := range inputs {
-			output, err := sess.PostTranslate(sinput, isJP)
-			if err != nil {
-				log.Print(err)
-				return ExitCodeFail
-			}
-			fmt.Fprintln(c.outStream, revertNoun.Replace(output))
-			time.Sleep(4 * time.Second)
-		}
-	}
-
-	if !exist {
-		ccs := sess.DumpCookies()
-		err = config.DumpCache(config.Cache{
-			Cookies: ccs,
-			Token:   token,
-		})
-		if err != nil {
-			log.Print(err)
-			return ExitCodeFail
-		}
-	}
-
-	return ExitCodeOK
+	fmt.Fprintf(c.outStream, "%s\n", res.Choices[0].Message.Content)
+	return 0
 }
